@@ -6,6 +6,7 @@ import ReadingForm from './components/ReadingForm';
 import ReadingList from './components/ReadingList';
 import Metrics from './components/Metrics';
 import AnalyticsCharts from './components/AnalyticsCharts';
+import BackupManager from './components/BackupManager';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -222,6 +223,8 @@ export default function App() {
                         </div>
                       </div>
                     </div>
+
+                    <BackupManager />
 
                     <div>
                       <h2 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Submit Reading</h2>

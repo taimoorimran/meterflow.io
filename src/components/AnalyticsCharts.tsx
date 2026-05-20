@@ -3,9 +3,9 @@ import { useCollectionData } from 'react-firebase-hooks/firestore';
 import { db, auth } from '../lib/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Reading } from '../types';
-import { computeMonthlyCycles, computeDailyConsumption, getCycleBounds, MonthlyCycleData } from '../lib/utils';
+import { computeMonthlyCycles, computeDailyConsumption, getCycleBounds, MonthlyCycleData, calculatePacing } from '../lib/utils';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, LineChart, Line, AreaChart, Area } from 'recharts';
-import { Zap, ShieldCheck, ShieldAlert, BarChart3, HelpCircle, CalendarRange } from 'lucide-react';
+import { Zap, ShieldCheck, ShieldAlert, BarChart3, HelpCircle, CalendarRange, Clock, TrendingUp } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface AnalyticsChartsProps {
@@ -49,6 +49,9 @@ export default function AnalyticsCharts({ cutoffDay, threshold }: AnalyticsChart
   // Filter daily readings that belong to current cycle
   const currentBounds = getCycleBounds(new Date(), cutoffDay);
   const currentCycleDaily = dailyData.filter(d => d.date >= currentBounds.start && d.date <= currentBounds.end);
+
+  const currentUnits = monthlyCycles[monthlyCycles.length - 1]?.units || 0;
+  const pacing = calculatePacing(currentUnits, currentBounds.start, currentBounds.end, threshold);
 
   // Custom tooltips for nice, neubrutalist geometric design
   const CustomTooltipAnnual = ({ active, payload }: any) => {
@@ -128,23 +131,78 @@ export default function AnalyticsCharts({ cutoffDay, threshold }: AnalyticsChart
           </div>
         </div>
 
-        {/* Current Cycle Standing */}
+        {/* Current Cycle Standing & Pacing Tracker */}
         <div className="bg-white p-6 border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-slate-400">Current Cycle Progress</span>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-black">
-                {monthlyCycles[monthlyCycles.length - 1]?.units.toFixed(1) || '0'}
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase text-slate-400">Current Cycle Progress</span>
+              <span className={`px-2 py-0.5 border text-[9px] uppercase font-black tracking-tight ${
+                pacing.isPacingUnsafe 
+                  ? 'bg-rose-100 text-rose-800 border-rose-400' 
+                  : 'bg-emerald-100 text-emerald-800 border-emerald-400'
+              }`}>
+                {pacing.isPacingUnsafe ? '⚠️ Pacing Unsafe' : '✓ Safe Pacing'}
               </span>
-              <span className="text-xs font-bold text-slate-400">/ {threshold} kWh Limit</span>
             </div>
 
-            <p className="text-xs text-slate-500 mt-2 font-medium">
-              We look back at the readings relative to the cutoff (Day {cutoffDay}) to evaluate your standing daily. Keep it below {threshold} to secure this month's protection.
-            </p>
+            <div className="mt-3 flex items-baseline justify-between">
+              <div>
+                <span className="text-3xl font-black">
+                  {currentUnits.toFixed(1)}
+                </span>
+                <span className="text-xs font-bold text-slate-400 ml-1">/ {threshold} kWh</span>
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-black text-slate-900 block font-mono">
+                  PROJ: {pacing.projectedUnits.toFixed(1)} kWh
+                </span>
+                <span className="text-[9px] font-bold text-slate-400 block uppercase">
+                  Est. Month-End
+                </span>
+              </div>
+            </div>
+
+            {/* Neubrutalist Progress Trackers */}
+            <div className="mt-4 space-y-3">
+              {/* Usage progress bar */}
+              <div>
+                <div className="flex justify-between text-[9px] font-black uppercase tracking-tight mb-1 text-slate-500">
+                  <span>Usage & Limit Progress</span>
+                  <span>{Math.min(100, Math.round((currentUnits / threshold) * 100))}%</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2.5 border-2 border-slate-900 overflow-hidden">
+                  <div 
+                    className={`h-full border-r border-slate-900 transition-all ${
+                      currentUnits > threshold ? 'bg-rose-500' : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${Math.min(100, (currentUnits / threshold) * 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Cycle time progress bar */}
+              <div>
+                <div className="flex justify-between text-[9px] font-black uppercase tracking-tight mb-1 text-slate-500">
+                  <span>Cycle Duration Spent ({pacing.daysElapsed}/{pacing.totalDays} Days)</span>
+                  <span>{pacing.progressPercent}%</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2.5 border-2 border-slate-900 overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-500 border-r border-slate-900 transition-all"
+                    style={{ width: `${pacing.progressPercent}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {pacing.isPacingUnsafe && (
+              <p className="text-[10px] text-rose-700 bg-rose-50 border border-rose-300 p-2 font-bold mt-3 leading-normal">
+                🚨 At your current pace of {pacing.dailyRate.toFixed(1)} kWh/day, you are projected to exceed your {threshold} kWh target. Consider reducing usage to maintain Protection!
+              </p>
+            )}
           </div>
 
-          <div className="mt-4 pt-4 border-t border-slate-200 flex flex-wrap gap-2">
+          <div className="mt-4 pt-3 border-t border-slate-200 flex flex-wrap gap-2">
             {last6Completed.map((c, idx) => (
               <div 
                 key={idx} 
@@ -158,7 +216,7 @@ export default function AnalyticsCharts({ cutoffDay, threshold }: AnalyticsChart
               </div>
             ))}
             {last6Completed.length === 0 && (
-              <span className="text-[10px] font-bold italic text-slate-400">Insufficient monthly records to generate 6-month status.</span>
+              <span className="text-[10px] font-bold italic text-slate-400">No past completed cycles to plot history.</span>
             )}
           </div>
         </div>

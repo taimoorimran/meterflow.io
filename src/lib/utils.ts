@@ -182,3 +182,42 @@ export function computeDailyConsumption(readings: Reading[]): DailyConsumptionDa
   // Return reverse-chronological or chronological as needed (chronological for graphs, reverse for lists)
   return dailyData;
 }
+
+export interface PacingData {
+  daysElapsed: number;
+  totalDays: number;
+  progressPercent: number;
+  projectedUnits: number;
+  isPacingUnsafe: boolean;
+  dailyRate: number;
+}
+
+export function calculatePacing(
+  currentCycleUnits: number,
+  startDate: Date,
+  endDate: Date,
+  threshold: number
+): PacingData {
+  const now = new Date();
+  // Bound current date to make sure it doesn't exceed the end of cycle
+  const current = now > endDate ? endDate : now;
+  
+  // Calculate difference in days (at least 1 day to avoid divide by zero)
+  const daysElapsed = Math.max(1, differenceInDays(current, startDate));
+  const totalDays = Math.max(1, differenceInDays(endDate, startDate));
+  const progressPercent = Math.min(100, Math.round((daysElapsed / totalDays) * 100));
+  
+  const dailyRate = currentCycleUnits / daysElapsed;
+  const projectedUnits = dailyRate * totalDays;
+  const isPacingUnsafe = projectedUnits > threshold;
+  
+  return {
+    daysElapsed,
+    totalDays,
+    progressPercent,
+    projectedUnits,
+    isPacingUnsafe,
+    dailyRate
+  };
+}
+
