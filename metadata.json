@@ -1,0 +1,6 @@
+{
+  "name": "MeterFlow",
+  "description": "Track meter readings, calculate units consumed, and get alerts for unusual consumption patterns with monthly cutoff tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Reading validation
+    function isValidReading(data) {
+      return data.keys().hasAll(['readingValue', 'date', 'userId', 'units', 'createdAt'])
+        && data.keys().size() <= 6 // fixed fields
+        && data.readingValue is number
+        && data.readingValue >= 0
+        && data.date is timestamp
+        && data.userId == request.auth.uid
+        && data.units is number
+        && data.createdAt == request.time
+        && (data.remarks == null || (data.remarks is string && data.remarks.size() <= 1000));
+    }
+
+    match /readings/{readingId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() 
+        && isValidReading(incoming())
+        && isValidId(readingId);
+
+      allow update: if isOwner(existing().userId)
+        && isValidReading(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && (
+          // Action: Update remarks
+          incoming().diff(existing()).affectedKeys().hasOnly(['remarks'])
+          || 
+          // Action: Full correction (allow fixing mistakes if needed, but keeping it strict)
+          incoming().diff(existing()).affectedKeys().hasAll(['readingValue', 'date', 'units'])
+        );
+
+      allow delete: if isOwner(existing().userId);
+    }
+  }
+}

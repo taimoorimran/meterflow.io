@@ -1,0 +1,44 @@
+{
+  "entities": {
+    "Reading": {
+      "title": "Meter Reading",
+      "description": "A record of a meter reading at a specific point in time.",
+      "type": "object",
+      "properties": {
+        "readingValue": {
+          "type": "number",
+          "description": "The current value on the meter."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date for which the reading is recorded (can be backdated)."
+        },
+        "remarks": {
+          "type": "string",
+          "description": "Optional remarks for the reading."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who owns this reading."
+        },
+        "units": {
+          "type": "number",
+          "description": "Calculate units since the previous reading."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the record was created in the system."
+        }
+      },
+      "required": ["readingValue", "date", "userId", "units", "createdAt"]
+    }
+  },
+  "firestore": {
+    "readings": {
+      "schema": "Reading",
+      "description": "Collection of all meter readings."
+    }
+  }
+}

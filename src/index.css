@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+}
+
+@layer components {
+  .brutal-border {
+    @apply border-2 border-slate-900;
+  }
+  
+  .brutal-shadow {
+    @apply shadow-[4px_4px_0px_0px_rgba(15,23,42,1)];
+  }
+
+  .brutal-shadow-sm {
+    @apply shadow-[2px_2px_0px_0px_rgba(15,23,42,1)];
+  }
+
+  .brutal-btn {
+    @apply border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] bg-slate-900 text-white font-bold uppercase py-2 px-4 hover:bg-slate-800 transition-all active:translate-x-[1px] active:translate-y-[1px] active:shadow-none;
+  }
+
+  .brutal-input {
+    @apply border-2 border-slate-900 bg-white px-4 py-2 outline-none focus:bg-slate-50 transition-colors;
+  }
+
+  .label-micro {
+    @apply text-[10px] font-black uppercase tracking-widest text-slate-400;
+  }
+}
