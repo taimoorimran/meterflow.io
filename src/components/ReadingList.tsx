@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useCollectionData } from 'react-firebase-hooks/firestore';
+import { useCollection } from 'react-firebase-hooks/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -9,13 +9,21 @@ import { Reading } from '../types';
 import { deleteDoc, doc } from 'firebase/firestore';
 
 export default function ReadingList() {
-  const [readings, loading, error] = useCollectionData(
+  const [snapshot, loading, error] = useCollection(
     query(
       collection(db, 'readings'),
       where('userId', '==', auth.currentUser?.uid),
       orderBy('date', 'desc')
     )
-  ) as unknown as [Reading[] | undefined, boolean, any, any];
+  );
+
+  const readings = snapshot?.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data
+    } as unknown as Reading;
+  });
 
   // Search & Filter local states
   const [searchQuery, setSearchQuery] = useState('');
@@ -171,13 +179,13 @@ export default function ReadingList() {
             </thead>
             <tbody className="text-xs">
               <AnimatePresence mode="popLayout">
-                {filteredReadings.map((reading) => (
+                {filteredReadings.map((reading, idx) => (
                   <motion.tr
                     layout
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    key={reading.id}
+                    key={reading.id || `reading-${reading.date?.toDate().getTime() || idx}`}
                     className="border-b border-slate-200 hover:bg-slate-50 transition-all group"
                   >
                     <td className="p-3 font-bold text-slate-900">

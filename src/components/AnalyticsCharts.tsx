@@ -7,6 +7,7 @@ import { computeMonthlyCycles, computeDailyConsumption, getCycleBounds, MonthlyC
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, LineChart, Line, AreaChart, Area } from 'recharts';
 import { Zap, ShieldCheck, ShieldAlert, BarChart3, HelpCircle, CalendarRange, Clock, TrendingUp } from 'lucide-react';
 import { motion } from 'motion/react';
+import TariffCalculator from './TariffCalculator';
 
 interface AnalyticsChartsProps {
   cutoffDay: number;
@@ -343,6 +344,9 @@ export default function AnalyticsCharts({ cutoffDay, threshold }: AnalyticsChart
           </div>
         )}
       </div>
+
+      {/* Bill & Tariff Analytical Simulator */}
+      <TariffCalculator />
     </div>
   );
 }
