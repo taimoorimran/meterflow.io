@@ -26,6 +26,10 @@
           "type": "number",
           "description": "Calculate units since the previous reading."
         },
+        "isOfficial": {
+          "type": "boolean",
+          "description": "Whether this reading is an official billing cutoff count."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",

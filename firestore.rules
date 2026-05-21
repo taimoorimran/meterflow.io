@@ -29,14 +29,15 @@ service cloud.firestore {
     // Reading validation
     function isValidReading(data) {
       return data.keys().hasAll(['readingValue', 'date', 'userId', 'units', 'createdAt'])
-        && data.keys().size() <= 6 // fixed fields
+        && data.keys().size() <= 7 // allowed fields: 5 required + 2 optional (remarks, isOfficial)
         && data.readingValue is number
         && data.readingValue >= 0
         && data.date is timestamp
         && data.userId == request.auth.uid
         && data.units is number
         && data.createdAt == request.time
-        && (data.remarks == null || (data.remarks is string && data.remarks.size() <= 1000));
+        && (data.remarks == null || (data.remarks is string && data.remarks.size() <= 1000))
+        && (data.isOfficial == null || data.isOfficial is bool);
     }
 
     match /readings/{readingId} {
